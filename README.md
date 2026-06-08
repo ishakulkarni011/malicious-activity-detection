@@ -1,5 +1,5 @@
 # Malicious Activity Detection on Social Media
-
+Built as final year project for SPPU 2023
 ML + NLP pipeline to detect **spam**, **fake accounts**, and **hate speech** in social media content.
 
 ## Features
