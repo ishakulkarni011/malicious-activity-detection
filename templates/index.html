@@ -3,325 +3,724 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Malicious Activity Detector</title>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" referrerpolicy="no-referrer" />
+  <title>ThreatScan — Social Media Analysis</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
     :root {
-      --bg: #0b1220; --surface: #161b22; --surface2: #21262d;
-      --border: #30363d; --accent: #ffb347; --text: #e6edf3;
-      --muted: #8b949e; --danger: #f85149; --success: #3fb950;
-      --warning: #d29922; --radius: 10px;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    }
-    body { background: var(--bg); color: var(--text); min-height: 100vh; }
-
-    header {
-      background: var(--surface); border-bottom: 1px solid var(--border);
-      padding: 0 32px; height: 58px; display: flex; align-items: center; gap: 14px;
-      position: sticky; top: 0; z-index: 10;
-    }
-    .logo { font-size: 1.1rem; font-weight: 700; color: var(--accent); }
-    .badge {
-      background: #3d0f0e; color: var(--danger); padding: 3px 10px;
-      border-radius: 20px; font-size: 0.75rem; font-weight: 700;
+      --bg:       #080d18;
+      --bg2:      #0d1526;
+      --surface:  #111e35;
+      --surface2: #1a2a45;
+      --border:   #1e3356;
+      --border2:  #2a4470;
+      --text:     #cdd9ee;
+      --muted:    #5a7a9e;
+      --accent:   #38bdf8;
+      --safe:     #34d399;
+      --danger:   #f87171;
+      --warn:     #fbbf24;
+      --radius:   8px;
     }
 
-    .main { max-width: 920px; margin: 0 auto; padding: 32px 20px; }
-    h1 { font-size: 1.6rem; font-weight: 800; margin-bottom: 6px; }
-    .sub { color: var(--muted); font-size: 0.9rem; margin-bottom: 28px; line-height: 1.6; }
-
-    .card {
-      background: var(--surface); border: 1px solid var(--border);
-      border-radius: var(--radius); padding: 20px; margin-bottom: 20px;
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Inter', sans-serif;
+      min-height: 100vh;
+      font-size: 15px;
+      line-height: 1.5;
     }
-    .card h3 { font-size: 0.85rem; text-transform: uppercase; letter-spacing: .07em;
-                color: var(--muted); margin-bottom: 14px; }
+
+    /* ── Header ───────────────────────────────────────────────────────── */
+    nav {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 32px;
+      height: 52px;
+      background: var(--bg2);
+      border-bottom: 1px solid var(--border);
+    }
+    .nav-brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 700;
+      font-size: 1rem;
+      color: var(--text);
+      letter-spacing: -.01em;
+    }
+    .brand-icon {
+      width: 28px; height: 28px;
+      background: linear-gradient(135deg, var(--accent) 0%, #818cf8 100%);
+      border-radius: 6px;
+      display: grid;
+      place-items: center;
+      font-size: 14px;
+    }
+    .nav-meta {
+      font-size: 0.78rem;
+      color: var(--muted);
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    /* ── Layout ───────────────────────────────────────────────────────── */
+    .layout {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0;
+      min-height: calc(100vh - 52px);
+    }
+    @media (max-width: 860px) {
+      .layout { grid-template-columns: 1fr; }
+    }
+
+    .pane {
+      padding: 32px 28px;
+      overflow-y: auto;
+    }
+    .pane-left  { border-right: 1px solid var(--border); }
+    .pane-right { background: var(--bg2); }
+
+    /* ── Left pane ────────────────────────────────────────────────────── */
+    .pane-header {
+      margin-bottom: 20px;
+    }
+    .pane-header h2 {
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 4px;
+    }
+    .pane-header p {
+      font-size: 0.83rem;
+      color: var(--muted);
+      line-height: 1.5;
+    }
 
     textarea {
-      width: 100%; background: var(--surface2); border: 1px solid var(--border);
-      border-radius: var(--radius); color: var(--text); font-size: 0.95rem;
-      padding: 12px 14px; resize: vertical; min-height: 120px; outline: none;
+      width: 100%;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      color: var(--text);
+      font-size: 0.9rem;
+      font-family: 'Inter', sans-serif;
+      padding: 14px;
+      resize: vertical;
+      min-height: 160px;
+      outline: none;
       transition: border-color .15s;
+      line-height: 1.6;
     }
     textarea:focus { border-color: var(--accent); }
-    textarea::placeholder { color: var(--muted); }
+    textarea::placeholder { color: var(--muted); font-style: italic; }
 
+    .char-count {
+      text-align: right;
+      font-size: 0.75rem;
+      color: var(--muted);
+      margin-top: 5px;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    /* Image upload */
+    .upload-label {
+      display: block;
+      margin-top: 14px;
+      font-size: 0.8rem;
+      font-weight: 500;
+      color: var(--muted);
+      margin-bottom: 6px;
+      text-transform: uppercase;
+      letter-spacing: .05em;
+    }
     .upload-zone {
-      border: 2px dashed var(--border); border-radius: var(--radius);
-      padding: 24px; text-align: center; cursor: pointer; transition: border-color .15s;
-      color: var(--muted); font-size: 0.9rem; margin-top: 12px;
+      border: 1px dashed var(--border2);
+      border-radius: var(--radius);
+      padding: 18px;
+      text-align: center;
+      cursor: pointer;
+      transition: border-color .15s, background .15s;
+      color: var(--muted);
+      font-size: 0.83rem;
     }
-    .upload-zone:hover { border-color: var(--accent); color: var(--accent); }
+    .upload-zone:hover { border-color: var(--accent); background: var(--surface); color: var(--accent); }
     .upload-zone input { display: none; }
-
-    .btn {
-      display: inline-flex; align-items: center; gap: 8px;
-      padding: 10px 22px; border-radius: var(--radius); font-size: 0.9rem;
-      font-weight: 700; cursor: pointer; border: none; transition: opacity .15s;
+    #preview-img {
+      width: 100%;
+      border-radius: var(--radius);
+      margin-top: 10px;
+      display: none;
+      border: 1px solid var(--border);
     }
-    .btn:hover { opacity: .85; }
-    .btn-primary { background: var(--accent); color: #0b1220; }
-    .btn-ghost { background: var(--surface2); color: var(--text); border: 1px solid var(--border); }
 
-    /* Results */
-    #results { display: none; }
-    .overall-banner {
-      padding: 14px 20px; border-radius: var(--radius); margin-bottom: 20px;
-      display: flex; align-items: center; gap: 12px; font-weight: 700;
+    /* Examples */
+    .examples {
+      margin-top: 18px;
     }
-    .banner-safe    { background: #0f2b13; border: 1px solid var(--success); color: var(--success); }
-    .banner-flagged { background: #3d0f0e; border: 1px solid var(--danger);  color: var(--danger); }
-
-    .detectors-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
-    @media(max-width:700px) { .detectors-grid { grid-template-columns: 1fr; } }
-
-    .detector-card {
-      background: var(--surface); border: 1px solid var(--border);
-      border-radius: var(--radius); padding: 18px;
+    .examples-label {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      margin-bottom: 8px;
     }
-    .detector-card.flagged { border-color: var(--danger); }
-    .detector-card.safe    { border-color: var(--success); }
-
-    .det-icon { font-size: 1.6rem; margin-bottom: 8px; }
-    .det-title { font-size: 0.8rem; color: var(--muted); text-transform: uppercase;
-                 letter-spacing: .06em; margin-bottom: 6px; }
-    .det-verdict { font-size: 1.3rem; font-weight: 800; margin-bottom: 10px; }
-    .verdict-safe    { color: var(--success); }
-    .verdict-flagged { color: var(--danger); }
-    .verdict-warning { color: var(--warning); }
-
-    .prob-bar-wrap { background: var(--surface2); border-radius: 4px; height: 6px; margin-bottom: 6px; }
-    .prob-bar { height: 6px; border-radius: 4px; transition: width .4s ease; }
-    .bar-safe    { background: var(--success); }
-    .bar-flagged { background: var(--danger); }
-    .bar-warning { background: var(--warning); }
-    .prob-label  { font-size: 0.78rem; color: var(--muted); }
-
-    .sub-probs { margin-top: 10px; display: flex; flex-direction: column; gap: 4px; }
-    .sub-prob-row { display: flex; justify-content: space-between; font-size: 0.78rem; }
-    .sub-prob-row span:first-child { color: var(--muted); }
-
-    .ocr-block {
-      background: var(--surface2); border: 1px solid var(--border);
-      border-radius: var(--radius); padding: 12px 14px; margin-top: 14px;
+    .example-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
     }
-    .ocr-block h4 { font-size: 0.78rem; color: var(--muted); margin-bottom: 6px;
-                    text-transform: uppercase; letter-spacing: .06em; }
-    .ocr-block p  { font-size: 0.9rem; line-height: 1.6; }
+    .chip {
+      padding: 5px 10px;
+      background: var(--surface);
+      border: 1px solid var(--border2);
+      border-radius: 20px;
+      font-size: 0.75rem;
+      color: var(--muted);
+      cursor: pointer;
+      transition: border-color .15s, color .15s;
+      white-space: nowrap;
+    }
+    .chip:hover { border-color: var(--accent); color: var(--accent); }
 
-    .spinner { display: none; width: 20px; height: 20px; border: 2px solid var(--border);
-               border-top-color: var(--accent); border-radius: 50%; animation: spin .7s linear infinite; }
+    /* Action row */
+    .actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 20px;
+      align-items: center;
+    }
+    .btn-scan {
+      flex: 1;
+      padding: 11px 20px;
+      background: var(--accent);
+      color: var(--bg);
+      border: none;
+      border-radius: var(--radius);
+      font-size: 0.88rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: opacity .15s, transform .1s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    .btn-scan:hover { opacity: .9; }
+    .btn-scan:active { transform: scale(.98); }
+    .btn-scan:disabled { opacity: .4; cursor: not-allowed; }
+    .btn-clear {
+      padding: 11px 16px;
+      background: transparent;
+      border: 1px solid var(--border2);
+      border-radius: var(--radius);
+      color: var(--muted);
+      font-size: 0.85rem;
+      cursor: pointer;
+      transition: border-color .15s, color .15s;
+    }
+    .btn-clear:hover { border-color: var(--text); color: var(--text); }
+
+    /* Spinner */
+    .spinner {
+      display: none;
+      width: 18px; height: 18px;
+      border: 2px solid rgba(56,189,248,.25);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin .6s linear infinite;
+    }
     @keyframes spin { to { transform: rotate(360deg); } }
 
-    #preview-img { max-width: 100%; border-radius: var(--radius); margin-top: 12px; display: none; }
+    /* ── Right pane — empty state ─────────────────────────────────────── */
+    .empty-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+      min-height: 300px;
+      text-align: center;
+      color: var(--muted);
+      gap: 12px;
+    }
+    .empty-icon {
+      font-size: 2.4rem;
+      opacity: .35;
+    }
+    .empty-state h3 { font-size: 0.95rem; font-weight: 500; }
+    .empty-state p  { font-size: 0.8rem; max-width: 220px; line-height: 1.5; }
 
-    footer { text-align: center; padding: 24px; color: var(--muted); font-size: 0.8rem; margin-top: 20px; }
+    /* ── Right pane — results ─────────────────────────────────────────── */
+    #results { display: none; }
+
+    .verdict-banner {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 14px 16px;
+      border-radius: var(--radius);
+      margin-bottom: 20px;
+      border-left: 3px solid;
+    }
+    .banner-clean   { background: rgba(52,211,153,.08); border-color: var(--safe);   color: var(--safe);   }
+    .banner-threat  { background: rgba(248,113,113,.08); border-color: var(--danger); color: var(--danger); }
+
+    .verdict-icon { font-size: 1.3rem; }
+    .verdict-text h4 { font-size: 0.9rem; font-weight: 700; }
+    .verdict-text p  { font-size: 0.78rem; opacity: .75; margin-top: 1px; }
+
+    /* Detector rows */
+    .detectors { display: flex; flex-direction: column; gap: 10px; }
+
+    .det-row {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 14px 16px;
+      display: grid;
+      grid-template-columns: 32px 1fr auto;
+      align-items: center;
+      gap: 12px;
+      transition: border-color .2s;
+    }
+    .det-row.row-safe    { border-color: rgba(52,211,153,.3); }
+    .det-row.row-danger  { border-color: rgba(248,113,113,.3); }
+    .det-row.row-warn    { border-color: rgba(251,191,36,.3); }
+
+    .det-row-icon {
+      width: 32px; height: 32px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      font-size: 0.95rem;
+      flex-shrink: 0;
+    }
+    .icon-safe   { background: rgba(52,211,153,.15); }
+    .icon-danger { background: rgba(248,113,113,.15); }
+    .icon-warn   { background: rgba(251,191,36,.15); }
+
+    .det-row-body .det-name {
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 3px;
+    }
+    .det-row-body .det-label {
+      font-size: 0.75rem;
+      color: var(--muted);
+    }
+    .det-row-body .det-algo {
+      font-size: 0.7rem;
+      color: var(--muted);
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .det-confidence {
+      text-align: right;
+      flex-shrink: 0;
+    }
+    .conf-pct {
+      font-size: 1.05rem;
+      font-weight: 700;
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .conf-safe   { color: var(--safe); }
+    .conf-danger { color: var(--danger); }
+    .conf-warn   { color: var(--warn); }
+    .conf-sub {
+      font-size: 0.7rem;
+      color: var(--muted);
+      margin-top: 1px;
+    }
+
+    /* Hate sub-class breakdown */
+    .hate-breakdown {
+      margin-top: 10px;
+      padding: 10px 12px;
+      background: var(--bg2);
+      border-radius: 6px;
+      border: 1px solid var(--border);
+    }
+    .hate-breakdown-title {
+      font-size: 0.72rem;
+      color: var(--muted);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: .05em;
+      margin-bottom: 8px;
+    }
+    .hb-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 5px;
+    }
+    .hb-label { font-size: 0.75rem; color: var(--muted); width: 68px; flex-shrink: 0; }
+    .hb-track { flex: 1; background: var(--surface2); border-radius: 3px; height: 5px; }
+    .hb-fill  { height: 5px; border-radius: 3px; transition: width .5s ease; }
+    .hb-val   { font-size: 0.72rem; color: var(--muted); font-family: 'JetBrains Mono', monospace; width: 36px; text-align: right; }
+
+    /* OCR block */
+    .ocr-card {
+      margin-top: 12px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 12px 14px;
+    }
+    .ocr-title {
+      font-size: 0.72rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+    .ocr-text {
+      font-size: 0.83rem;
+      color: var(--text);
+      line-height: 1.6;
+      font-family: 'JetBrains Mono', monospace;
+      opacity: .8;
+    }
+
+    /* Scanned input echo */
+    .scanned-input {
+      margin-bottom: 16px;
+      padding: 10px 12px;
+      background: var(--surface);
+      border-radius: var(--radius);
+      border-left: 2px solid var(--border2);
+    }
+    .scanned-label { font-size: 0.7rem; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: .05em; margin-bottom: 4px; }
+    .scanned-text  { font-size: 0.83rem; color: var(--text); line-height: 1.5; word-break: break-word; }
+    .scanned-text.truncated { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+
+    .results-header {
+      font-size: 0.72rem;
+      font-weight: 600;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      margin-bottom: 10px;
+    }
   </style>
 </head>
 <body>
-  <header>
-    <div class="logo"><i class="fas fa-shield-halved"></i> Malicious Activity Detector</div>
-    <span class="badge">ML + NLP + OCR</span>
-  </header>
 
-  <main class="main">
-    <h1>Social Media Threat Analysis</h1>
-    <p class="sub">
-      Detects <strong>Spam</strong>, <strong>Fake Accounts</strong>, and <strong>Hate Speech</strong>
-      using engineered features and trained ML classifiers.
-      {% if ocr_available %}Supports image input via OCR text extraction.{% endif %}
-    </p>
+<nav>
+  <div class="nav-brand">
+    <div class="brand-icon">🔍</div>
+    ThreatScan
+  </div>
+  <span class="nav-meta">spam · fake accounts · hate speech</span>
+</nav>
 
-    <!-- Input card -->
-    <div class="card">
-      <h3>Input</h3>
-      <textarea id="inputText" placeholder="Enter a social media post, comment, or any text to analyse…"></textarea>
+<div class="layout">
 
-      {% if ocr_available %}
-      <div class="upload-zone" id="dropZone">
-        <input type="file" id="imageInput" accept="image/*" />
-        <i class="fas fa-image" style="font-size:1.4rem;margin-bottom:6px;display:block;"></i>
-        Or upload an image — text will be extracted via OCR
+  <!-- ── Left: Input ──────────────────────────────────────────────────── -->
+  <div class="pane pane-left">
+    <div class="pane-header">
+      <h2>Analyse content</h2>
+      <p>Paste a post, comment, or bio to scan for malicious signals.</p>
+    </div>
+
+    <textarea id="inputText"
+      placeholder="e.g. FREE CLICK NOW! Win $500 cash guaranteed — http://bit.ly/deal99 #giveaway #freebie @promo_bot"
+      oninput="updateChar()"></textarea>
+    <div class="char-count"><span id="charCount">0</span> chars</div>
+
+    {% if ocr_available %}
+    <span class="upload-label">or upload an image</span>
+    <div class="upload-zone" id="dropZone">
+      <input type="file" id="imageInput" accept="image/*" />
+      📎 &nbsp;Click to attach image — text extracted via OCR
+    </div>
+    <img id="preview-img" alt="Upload preview" />
+    {% endif %}
+
+    <div class="examples">
+      <div class="examples-label">Quick examples</div>
+      <div class="example-chips">
+        <span class="chip" onclick="setExample(this)">FREE WIN CASH CLICK NOW http://bit.ly/spam #deal #promo!!!</span>
+        <span class="chip" onclick="setExample(this)">Just had a lovely morning exploring the city and reading with coffee</span>
+        <span class="chip" onclick="setExample(this)">Everyone should despise those filthy worthless idiots in that community</span>
+        <span class="chip" onclick="setExample(this)">EXCLUSIVE OFFER! GUARANTEED EARN $1000 URGENT ACT NOW @click_here</span>
       </div>
-      <img id="preview-img" alt="Uploaded image preview" />
-      {% endif %}
+    </div>
 
-      <div style="margin-top:16px;display:flex;gap:10px;align-items:center;">
-        <button class="btn btn-primary" id="analyseBtn">
-          <i class="fas fa-search"></i> Analyse
-        </button>
-        <button class="btn btn-ghost" id="clearBtn">Clear</button>
+    <div class="actions">
+      <button class="btn-scan" id="scanBtn" onclick="runScan()">
+        <span id="btnLabel">Scan</span>
         <div class="spinner" id="spinner"></div>
-      </div>
+      </button>
+      <button class="btn-clear" onclick="clearAll()">Clear</button>
+    </div>
+  </div>
+
+  <!-- ── Right: Results ──────────────────────────────────────────────── -->
+  <div class="pane pane-right" id="rightPane">
+
+    <!-- Empty state -->
+    <div class="empty-state" id="emptyState">
+      <div class="empty-icon">🛡️</div>
+      <h3>No scan yet</h3>
+      <p>Enter text on the left and hit Scan to analyse for threats.</p>
     </div>
 
     <!-- Results -->
     <div id="results">
-      <div class="overall-banner" id="overallBanner"></div>
+      <div class="verdict-banner" id="verdictBanner"></div>
 
-      <div class="detectors-grid">
+      <div class="scanned-input">
+        <div class="scanned-label">Scanned input</div>
+        <div class="scanned-text truncated" id="scannedText"></div>
+      </div>
+
+      <div class="results-header">Detection results</div>
+
+      <div class="detectors">
         <!-- Spam -->
-        <div class="detector-card" id="spamCard">
-          <div class="det-icon">📧</div>
-          <div class="det-title">Spam Detection</div>
-          <div class="det-verdict" id="spamVerdict"></div>
-          <div class="prob-bar-wrap"><div class="prob-bar" id="spamBar"></div></div>
-          <div class="prob-label" id="spamProb"></div>
+        <div class="det-row" id="spamRow">
+          <div class="det-row-icon" id="spamIcon"></div>
+          <div class="det-row-body">
+            <div class="det-name">Spam Detection</div>
+            <div class="det-label" id="spamLabel"></div>
+            <div class="det-algo">Random Forest · TF-IDF + text stats</div>
+          </div>
+          <div class="det-confidence">
+            <div class="conf-pct" id="spamConf"></div>
+            <div class="conf-sub">confidence</div>
+          </div>
         </div>
 
         <!-- Fake Account -->
-        <div class="detector-card" id="fakeCard">
-          <div class="det-icon">🤖</div>
-          <div class="det-title">Fake Account</div>
-          <div class="det-verdict" id="fakeVerdict"></div>
-          <div class="prob-bar-wrap"><div class="prob-bar" id="fakeBar"></div></div>
-          <div class="prob-label" id="fakeProb"></div>
+        <div class="det-row" id="fakeRow">
+          <div class="det-row-icon" id="fakeIcon"></div>
+          <div class="det-row-body">
+            <div class="det-name">Fake Account</div>
+            <div class="det-label" id="fakeLabel"></div>
+            <div class="det-algo">Gradient Boosting · account features</div>
+          </div>
+          <div class="det-confidence">
+            <div class="conf-pct" id="fakeConf"></div>
+            <div class="conf-sub">confidence</div>
+          </div>
         </div>
 
         <!-- Hate Speech -->
-        <div class="detector-card" id="hateCard">
-          <div class="det-icon">⚠️</div>
-          <div class="det-title">Hate Speech</div>
-          <div class="det-verdict" id="hateVerdict"></div>
-          <div class="prob-bar-wrap"><div class="prob-bar" id="hateBar"></div></div>
-          <div class="prob-label" id="hateProb"></div>
-          <div class="sub-probs" id="hateSubProbs"></div>
+        <div class="det-row" id="hateRow">
+          <div class="det-row-icon" id="hateIcon"></div>
+          <div class="det-row-body">
+            <div class="det-name">Hate Speech</div>
+            <div class="det-label" id="hateLabel"></div>
+            <div class="det-algo">LinearSVC · neutral / offensive / hate</div>
+            <div class="hate-breakdown" id="hateBreakdown" style="display:none">
+              <div class="hate-breakdown-title">Class probabilities</div>
+              <div id="hbRows"></div>
+            </div>
+          </div>
+          <div class="det-confidence">
+            <div class="conf-pct" id="hateConf"></div>
+            <div class="conf-sub">confidence</div>
+          </div>
         </div>
       </div>
 
-      <!-- OCR extracted text -->
-      <div class="ocr-block" id="ocrBlock" style="display:none">
-        <h4><i class="fas fa-file-image"></i>  OCR Extracted Text</h4>
-        <p id="ocrText"></p>
+      <div class="ocr-card" id="ocrCard" style="display:none">
+        <div class="ocr-title">OCR — extracted text</div>
+        <div class="ocr-text" id="ocrText"></div>
       </div>
     </div>
-  </main>
 
-  <footer>
-    Malicious Activity Detection · Python · scikit-learn · NLP · OCR · Flask
-  </footer>
+  </div>
+</div>
 
-  <script>
-    let imageB64 = null;
+<script>
+  let imageB64 = null;
 
-    // ── OCR image handling ─────────────────────────────────────────────────────
-    const dropZone   = document.getElementById('dropZone');
-    const imageInput = document.getElementById('imageInput');
-    const previewImg = document.getElementById('preview-img');
+  function updateChar() {
+    document.getElementById('charCount').textContent =
+      document.getElementById('inputText').value.length;
+  }
 
-    if (dropZone) {
-      dropZone.addEventListener('click', () => imageInput.click());
-      imageInput?.addEventListener('change', e => {
-        const file = e.target.files[0];
-        if (!file) return;
-        const reader = new FileReader();
-        reader.onload = ev => {
-          imageB64 = ev.target.result.split(',')[1];
-          previewImg.src = ev.target.result;
-          previewImg.style.display = 'block';
-        };
-        reader.readAsDataURL(file);
-      });
+  function setExample(el) {
+    document.getElementById('inputText').value = el.textContent.trim();
+    updateChar();
+  }
+
+  // Image upload
+  const dropZone   = document.getElementById('dropZone');
+  const imageInput = document.getElementById('imageInput');
+  const previewImg = document.getElementById('preview-img');
+
+  if (dropZone) {
+    dropZone.addEventListener('click', () => imageInput.click());
+    imageInput?.addEventListener('change', e => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = ev => {
+        imageB64 = ev.target.result.split(',')[1];
+        previewImg.src = ev.target.result;
+        previewImg.style.display = 'block';
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
+  function clearAll() {
+    document.getElementById('inputText').value = '';
+    updateChar();
+    document.getElementById('results').style.display   = 'none';
+    document.getElementById('emptyState').style.display = 'flex';
+    imageB64 = null;
+    if (previewImg) { previewImg.style.display = 'none'; }
+  }
+
+  async function runScan() {
+    const text = document.getElementById('inputText').value.trim();
+    if (!text && !imageB64) {
+      document.getElementById('inputText').focus();
+      return;
     }
 
-    // ── Analyse ────────────────────────────────────────────────────────────────
-    document.getElementById('analyseBtn').addEventListener('click', analyse);
-    document.getElementById('clearBtn').addEventListener('click', () => {
-      document.getElementById('inputText').value = '';
-      document.getElementById('results').style.display = 'none';
-      if (previewImg) { previewImg.style.display = 'none'; imageB64 = null; }
-    });
+    const btn    = document.getElementById('scanBtn');
+    const label  = document.getElementById('btnLabel');
+    const spin   = document.getElementById('spinner');
+    btn.disabled = true;
+    label.textContent = 'Scanning…';
+    spin.style.display = 'block';
 
-    async function analyse() {
-      const text = document.getElementById('inputText').value.trim();
-      if (!text && !imageB64) { alert('Please enter text or upload an image.'); return; }
+    document.getElementById('results').style.display    = 'none';
+    document.getElementById('emptyState').style.display = 'none';
 
-      document.getElementById('spinner').style.display = 'block';
-      document.getElementById('results').style.display = 'none';
-
+    try {
       const res  = await fetch('/analyse', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ text, image_b64: imageB64 }),
       });
       const data = await res.json();
-      document.getElementById('spinner').style.display = 'none';
-
       if (data.error) { alert(data.error); return; }
-      render(data);
+      renderResults(data);
+    } finally {
+      btn.disabled = false;
+      label.textContent = 'Scan';
+      spin.style.display = 'none';
+    }
+  }
+
+  function renderResults(data) {
+    document.getElementById('emptyState').style.display = 'none';
+    document.getElementById('results').style.display    = 'block';
+
+    // Scanned input echo
+    document.getElementById('scannedText').textContent = data.text;
+
+    // Verdict banner
+    const banner = document.getElementById('verdictBanner');
+    if (data.overall_flagged) {
+      banner.className = 'verdict-banner banner-threat';
+      banner.innerHTML = `
+        <span class="verdict-icon">⚠️</span>
+        <div class="verdict-text">
+          <h4>Threat detected</h4>
+          <p>One or more signals flagged in this content</p>
+        </div>`;
+    } else {
+      banner.className = 'verdict-banner banner-clean';
+      banner.innerHTML = `
+        <span class="verdict-icon">✅</span>
+        <div class="verdict-text">
+          <h4>No threats found</h4>
+          <p>Content appears clean across all detectors</p>
+        </div>`;
     }
 
-    function render(data) {
-      const results = document.getElementById('results');
-      results.style.display = 'block';
+    // Spam row
+    setRow('spam', data.spam.flagged, false,
+      data.spam.label,
+      data.spam.probability,
+      data.spam.flagged ? 'Flagged as unsolicited / promotional' : 'Looks like normal content');
 
-      // Overall banner
-      const banner = document.getElementById('overallBanner');
-      if (data.overall_flagged) {
-        banner.className = 'overall-banner banner-flagged';
-        banner.innerHTML = '<i class="fas fa-triangle-exclamation"></i> Malicious activity detected in this content.';
-      } else {
-        banner.className = 'overall-banner banner-safe';
-        banner.innerHTML = '<i class="fas fa-circle-check"></i> No malicious activity detected.';
-      }
+    // Fake account row
+    setRow('fake', data.fake_account.flagged, false,
+      data.fake_account.label,
+      data.fake_account.probability,
+      data.fake_account.flagged ? 'Account pattern resembles a bot' : 'Account pattern looks authentic');
 
-      // Spam
-      renderCard('spam', data.spam.flagged, data.spam.label, data.spam.probability,
-                 `Confidence: ${(data.spam.probability * 100).toFixed(1)}%`);
+    // Hate speech row
+    const warn = data.hate_speech.label === 'Offensive';
+    setRow('hate', data.hate_speech.flagged, warn,
+      data.hate_speech.label,
+      data.hate_speech.probability,
+      `Classified as: ${data.hate_speech.label}`);
 
-      // Fake account
-      renderCard('fake', data.fake_account.flagged, data.fake_account.label,
-                 data.fake_account.probability,
-                 `Confidence: ${(data.fake_account.probability * 100).toFixed(1)}%`);
-
-      // Hate speech
-      const hateFlagged = data.hate_speech.flagged;
-      const hateWarning = data.hate_speech.label === 'Offensive';
-      renderCard('hate', hateFlagged, data.hate_speech.label,
-                 data.hate_speech.probability,
-                 `Class: ${data.hate_speech.label}  (${(data.hate_speech.probability*100).toFixed(1)}%)`,
-                 hateWarning);
-
-      // Hate sub-probs
-      const subEl = document.getElementById('hateSubProbs');
-      subEl.innerHTML = '';
-      for (const [lbl, prob] of Object.entries(data.hate_speech.class_probs)) {
-        subEl.innerHTML += `<div class="sub-prob-row"><span>${lbl}</span><span>${(prob*100).toFixed(1)}%</span></div>`;
-      }
-
-      // OCR block
-      if (data.ocr_text) {
-        document.getElementById('ocrBlock').style.display = 'block';
-        document.getElementById('ocrText').textContent   = data.ocr_text;
-      } else {
-        document.getElementById('ocrBlock').style.display = 'none';
-      }
+    // Hate breakdown
+    const hbDiv = document.getElementById('hateBreakdown');
+    const hbRows = document.getElementById('hbRows');
+    hbDiv.style.display = 'block';
+    hbRows.innerHTML = '';
+    const barColors = { Neutral: '#34d399', Offensive: '#fbbf24', Hate: '#f87171' };
+    for (const [lbl, prob] of Object.entries(data.hate_speech.class_probs)) {
+      hbRows.innerHTML += `
+        <div class="hb-row">
+          <span class="hb-label">${lbl}</span>
+          <div class="hb-track"><div class="hb-fill" style="width:${(prob*100).toFixed(1)}%;background:${barColors[lbl]||'#5a7a9e'}"></div></div>
+          <span class="hb-val">${(prob*100).toFixed(0)}%</span>
+        </div>`;
     }
 
-    function renderCard(prefix, flagged, label, prob, probLabel, warning=false) {
-      const card    = document.getElementById(prefix + 'Card');
-      const verdict = document.getElementById(prefix + 'Verdict');
-      const bar     = document.getElementById(prefix + 'Bar');
-      const probEl  = document.getElementById(prefix + 'Prob');
-
-      card.className = 'detector-card ' + (flagged ? 'flagged' : 'safe');
-
-      if (flagged && !warning) {
-        verdict.className = 'det-verdict verdict-flagged';
-        bar.className = 'prob-bar bar-flagged';
-      } else if (warning) {
-        verdict.className = 'det-verdict verdict-warning';
-        bar.className = 'prob-bar bar-warning';
-      } else {
-        verdict.className = 'det-verdict verdict-safe';
-        bar.className = 'prob-bar bar-safe';
-      }
-
-      verdict.textContent = label;
-      bar.style.width = (prob * 100) + '%';
-      probEl.textContent = probLabel;
+    // OCR
+    if (data.ocr_text) {
+      document.getElementById('ocrCard').style.display = 'block';
+      document.getElementById('ocrText').textContent   = data.ocr_text;
+    } else {
+      document.getElementById('ocrCard').style.display = 'none';
     }
-  </script>
+  }
+
+  function setRow(prefix, flagged, warn, label, prob, subtitle) {
+    const row  = document.getElementById(prefix + 'Row');
+    const icon = document.getElementById(prefix + 'Icon');
+    const lbl  = document.getElementById(prefix + 'Label');
+    const conf = document.getElementById(prefix + 'Conf');
+
+    if (flagged && !warn) {
+      row.className  = 'det-row row-danger';
+      icon.className = 'det-row-icon icon-danger';
+      icon.textContent = '✗';
+      conf.className = 'conf-pct conf-danger';
+    } else if (warn) {
+      row.className  = 'det-row row-warn';
+      icon.className = 'det-row-icon icon-warn';
+      icon.textContent = '!';
+      conf.className = 'conf-pct conf-warn';
+    } else {
+      row.className  = 'det-row row-safe';
+      icon.className = 'det-row-icon icon-safe';
+      icon.textContent = '✓';
+      conf.className = 'conf-pct conf-safe';
+    }
+
+    lbl.textContent  = subtitle;
+    conf.textContent = (prob * 100).toFixed(0) + '%';
+  }
+
+  // Allow Enter to scan (Shift+Enter for newline)
+  document.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('inputText').addEventListener('keydown', e => {
+      if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); runScan(); }
+    });
+  });
+</script>
 </body>
 </html>
