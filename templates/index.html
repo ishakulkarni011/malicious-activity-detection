@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Malicious Activity Detector</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" referrerpolicy="no-referrer" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #0b1220; --surface: #161b22; --surface2: #21262d;
+      --border: #30363d; --accent: #ffb347; --text: #e6edf3;
+      --muted: #8b949e; --danger: #f85149; --success: #3fb950;
+      --warning: #d29922; --radius: 10px;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+    body { background: var(--bg); color: var(--text); min-height: 100vh; }
+
+    header {
+      background: var(--surface); border-bottom: 1px solid var(--border);
+      padding: 0 32px; height: 58px; display: flex; align-items: center; gap: 14px;
+      position: sticky; top: 0; z-index: 10;
+    }
+    .logo { font-size: 1.1rem; font-weight: 700; color: var(--accent); }
+    .badge {
+      background: #3d0f0e; color: var(--danger); padding: 3px 10px;
+      border-radius: 20px; font-size: 0.75rem; font-weight: 700;
+    }
+
+    .main { max-width: 920px; margin: 0 auto; padding: 32px 20px; }
+    h1 { font-size: 1.6rem; font-weight: 800; margin-bottom: 6px; }
+    .sub { color: var(--muted); font-size: 0.9rem; margin-bottom: 28px; line-height: 1.6; }
+
+    .card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 20px; margin-bottom: 20px;
+    }
+    .card h3 { font-size: 0.85rem; text-transform: uppercase; letter-spacing: .07em;
+                color: var(--muted); margin-bottom: 14px; }
+
+    textarea {
+      width: 100%; background: var(--surface2); border: 1px solid var(--border);
+      border-radius: var(--radius); color: var(--text); font-size: 0.95rem;
+      padding: 12px 14px; resize: vertical; min-height: 120px; outline: none;
+      transition: border-color .15s;
+    }
+    textarea:focus { border-color: var(--accent); }
+    textarea::placeholder { color: var(--muted); }
+
+    .upload-zone {
+      border: 2px dashed var(--border); border-radius: var(--radius);
+      padding: 24px; text-align: center; cursor: pointer; transition: border-color .15s;
+      color: var(--muted); font-size: 0.9rem; margin-top: 12px;
+    }
+    .upload-zone:hover { border-color: var(--accent); color: var(--accent); }
+    .upload-zone input { display: none; }
+
+    .btn {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 10px 22px; border-radius: var(--radius); font-size: 0.9rem;
+      font-weight: 700; cursor: pointer; border: none; transition: opacity .15s;
+    }
+    .btn:hover { opacity: .85; }
+    .btn-primary { background: var(--accent); color: #0b1220; }
+    .btn-ghost { background: var(--surface2); color: var(--text); border: 1px solid var(--border); }
+
+    /* Results */
+    #results { display: none; }
+    .overall-banner {
+      padding: 14px 20px; border-radius: var(--radius); margin-bottom: 20px;
+      display: flex; align-items: center; gap: 12px; font-weight: 700;
+    }
+    .banner-safe    { background: #0f2b13; border: 1px solid var(--success); color: var(--success); }
+    .banner-flagged { background: #3d0f0e; border: 1px solid var(--danger);  color: var(--danger); }
+
+    .detectors-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+    @media(max-width:700px) { .detectors-grid { grid-template-columns: 1fr; } }
+
+    .detector-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 18px;
+    }
+    .detector-card.flagged { border-color: var(--danger); }
+    .detector-card.safe    { border-color: var(--success); }
+
+    .det-icon { font-size: 1.6rem; margin-bottom: 8px; }
+    .det-title { font-size: 0.8rem; color: var(--muted); text-transform: uppercase;
+                 letter-spacing: .06em; margin-bottom: 6px; }
+    .det-verdict { font-size: 1.3rem; font-weight: 800; margin-bottom: 10px; }
+    .verdict-safe    { color: var(--success); }
+    .verdict-flagged { color: var(--danger); }
+    .verdict-warning { color: var(--warning); }
+
+    .prob-bar-wrap { background: var(--surface2); border-radius: 4px; height: 6px; margin-bottom: 6px; }
+    .prob-bar { height: 6px; border-radius: 4px; transition: width .4s ease; }
+    .bar-safe    { background: var(--success); }
+    .bar-flagged { background: var(--danger); }
+    .bar-warning { background: var(--warning); }
+    .prob-label  { font-size: 0.78rem; color: var(--muted); }
+
+    .sub-probs { margin-top: 10px; display: flex; flex-direction: column; gap: 4px; }
+    .sub-prob-row { display: flex; justify-content: space-between; font-size: 0.78rem; }
+    .sub-prob-row span:first-child { color: var(--muted); }
+
+    .ocr-block {
+      background: var(--surface2); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 12px 14px; margin-top: 14px;
+    }
+    .ocr-block h4 { font-size: 0.78rem; color: var(--muted); margin-bottom: 6px;
+                    text-transform: uppercase; letter-spacing: .06em; }
+    .ocr-block p  { font-size: 0.9rem; line-height: 1.6; }
+
+    .spinner { display: none; width: 20px; height: 20px; border: 2px solid var(--border);
+               border-top-color: var(--accent); border-radius: 50%; animation: spin .7s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    #preview-img { max-width: 100%; border-radius: var(--radius); margin-top: 12px; display: none; }
+
+    footer { text-align: center; padding: 24px; color: var(--muted); font-size: 0.8rem; margin-top: 20px; }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="logo"><i class="fas fa-shield-halved"></i> Malicious Activity Detector</div>
+    <span class="badge">ML + NLP + OCR</span>
+  </header>
+
+  <main class="main">
+    <h1>Social Media Threat Analysis</h1>
+    <p class="sub">
+      Detects <strong>Spam</strong>, <strong>Fake Accounts</strong>, and <strong>Hate Speech</strong>
+      using engineered features and trained ML classifiers.
+      {% if ocr_available %}Supports image input via OCR text extraction.{% endif %}
+    </p>
+
+    <!-- Input card -->
+    <div class="card">
+      <h3>Input</h3>
+      <textarea id="inputText" placeholder="Enter a social media post, comment, or any text to analyse…"></textarea>
+
+      {% if ocr_available %}
+      <div class="upload-zone" id="dropZone">
+        <input type="file" id="imageInput" accept="image/*" />
+        <i class="fas fa-image" style="font-size:1.4rem;margin-bottom:6px;display:block;"></i>
+        Or upload an image — text will be extracted via OCR
+      </div>
+      <img id="preview-img" alt="Uploaded image preview" />
+      {% endif %}
+
+      <div style="margin-top:16px;display:flex;gap:10px;align-items:center;">
+        <button class="btn btn-primary" id="analyseBtn">
+          <i class="fas fa-search"></i> Analyse
+        </button>
+        <button class="btn btn-ghost" id="clearBtn">Clear</button>
+        <div class="spinner" id="spinner"></div>
+      </div>
+    </div>
+
+    <!-- Results -->
+    <div id="results">
+      <div class="overall-banner" id="overallBanner"></div>
+
+      <div class="detectors-grid">
+        <!-- Spam -->
+        <div class="detector-card" id="spamCard">
+          <div class="det-icon">📧</div>
+          <div class="det-title">Spam Detection</div>
+          <div class="det-verdict" id="spamVerdict"></div>
+          <div class="prob-bar-wrap"><div class="prob-bar" id="spamBar"></div></div>
+          <div class="prob-label" id="spamProb"></div>
+        </div>
+
+        <!-- Fake Account -->
+        <div class="detector-card" id="fakeCard">
+          <div class="det-icon">🤖</div>
+          <div class="det-title">Fake Account</div>
+          <div class="det-verdict" id="fakeVerdict"></div>
+          <div class="prob-bar-wrap"><div class="prob-bar" id="fakeBar"></div></div>
+          <div class="prob-label" id="fakeProb"></div>
+        </div>
+
+        <!-- Hate Speech -->
+        <div class="detector-card" id="hateCard">
+          <div class="det-icon">⚠️</div>
+          <div class="det-title">Hate Speech</div>
+          <div class="det-verdict" id="hateVerdict"></div>
+          <div class="prob-bar-wrap"><div class="prob-bar" id="hateBar"></div></div>
+          <div class="prob-label" id="hateProb"></div>
+          <div class="sub-probs" id="hateSubProbs"></div>
+        </div>
+      </div>
+
+      <!-- OCR extracted text -->
+      <div class="ocr-block" id="ocrBlock" style="display:none">
+        <h4><i class="fas fa-file-image"></i>  OCR Extracted Text</h4>
+        <p id="ocrText"></p>
+      </div>
+    </div>
+  </main>
+
+  <footer>
+    Malicious Activity Detection · Python · scikit-learn · NLP · OCR · Flask
+  </footer>
+
+  <script>
+    let imageB64 = null;
+
+    // ── OCR image handling ─────────────────────────────────────────────────────
+    const dropZone   = document.getElementById('dropZone');
+    const imageInput = document.getElementById('imageInput');
+    const previewImg = document.getElementById('preview-img');
+
+    if (dropZone) {
+      dropZone.addEventListener('click', () => imageInput.click());
+      imageInput?.addEventListener('change', e => {
+        const file = e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = ev => {
+          imageB64 = ev.target.result.split(',')[1];
+          previewImg.src = ev.target.result;
+          previewImg.style.display = 'block';
+        };
+        reader.readAsDataURL(file);
+      });
+    }
+
+    // ── Analyse ────────────────────────────────────────────────────────────────
+    document.getElementById('analyseBtn').addEventListener('click', analyse);
+    document.getElementById('clearBtn').addEventListener('click', () => {
+      document.getElementById('inputText').value = '';
+      document.getElementById('results').style.display = 'none';
+      if (previewImg) { previewImg.style.display = 'none'; imageB64 = null; }
+    });
+
+    async function analyse() {
+      const text = document.getElementById('inputText').value.trim();
+      if (!text && !imageB64) { alert('Please enter text or upload an image.'); return; }
+
+      document.getElementById('spinner').style.display = 'block';
+      document.getElementById('results').style.display = 'none';
+
+      const res  = await fetch('/analyse', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text, image_b64: imageB64 }),
+      });
+      const data = await res.json();
+      document.getElementById('spinner').style.display = 'none';
+
+      if (data.error) { alert(data.error); return; }
+      render(data);
+    }
+
+    function render(data) {
+      const results = document.getElementById('results');
+      results.style.display = 'block';
+
+      // Overall banner
+      const banner = document.getElementById('overallBanner');
+      if (data.overall_flagged) {
+        banner.className = 'overall-banner banner-flagged';
+        banner.innerHTML = '<i class="fas fa-triangle-exclamation"></i> Malicious activity detected in this content.';
+      } else {
+        banner.className = 'overall-banner banner-safe';
+        banner.innerHTML = '<i class="fas fa-circle-check"></i> No malicious activity detected.';
+      }
+
+      // Spam
+      renderCard('spam', data.spam.flagged, data.spam.label, data.spam.probability,
+                 `Confidence: ${(data.spam.probability * 100).toFixed(1)}%`);
+
+      // Fake account
+      renderCard('fake', data.fake_account.flagged, data.fake_account.label,
+                 data.fake_account.probability,
+                 `Confidence: ${(data.fake_account.probability * 100).toFixed(1)}%`);
+
+      // Hate speech
+      const hateFlagged = data.hate_speech.flagged;
+      const hateWarning = data.hate_speech.label === 'Offensive';
+      renderCard('hate', hateFlagged, data.hate_speech.label,
+                 data.hate_speech.probability,
+                 `Class: ${data.hate_speech.label}  (${(data.hate_speech.probability*100).toFixed(1)}%)`,
+                 hateWarning);
+
+      // Hate sub-probs
+      const subEl = document.getElementById('hateSubProbs');
+      subEl.innerHTML = '';
+      for (const [lbl, prob] of Object.entries(data.hate_speech.class_probs)) {
+        subEl.innerHTML += `<div class="sub-prob-row"><span>${lbl}</span><span>${(prob*100).toFixed(1)}%</span></div>`;
+      }
+
+      // OCR block
+      if (data.ocr_text) {
+        document.getElementById('ocrBlock').style.display = 'block';
+        document.getElementById('ocrText').textContent   = data.ocr_text;
+      } else {
+        document.getElementById('ocrBlock').style.display = 'none';
+      }
+    }
+
+    function renderCard(prefix, flagged, label, prob, probLabel, warning=false) {
+      const card    = document.getElementById(prefix + 'Card');
+      const verdict = document.getElementById(prefix + 'Verdict');
+      const bar     = document.getElementById(prefix + 'Bar');
+      const probEl  = document.getElementById(prefix + 'Prob');
+
+      card.className = 'detector-card ' + (flagged ? 'flagged' : 'safe');
+
+      if (flagged && !warning) {
+        verdict.className = 'det-verdict verdict-flagged';
+        bar.className = 'prob-bar bar-flagged';
+      } else if (warning) {
+        verdict.className = 'det-verdict verdict-warning';
+        bar.className = 'prob-bar bar-warning';
+      } else {
+        verdict.className = 'det-verdict verdict-safe';
+        bar.className = 'prob-bar bar-safe';
+      }
+
+      verdict.textContent = label;
+      bar.style.width = (prob * 100) + '%';
+      probEl.textContent = probLabel;
+    }
+  </script>
+</body>
+</html>
